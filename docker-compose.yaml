@@ -1,0 +1,9 @@
+# filepath: /d:/ltw/lab01/bai01/docker-compose.yaml
+services:
+  web:
+    build: .
+    image: lab01/bai01
+    ports:
+      - "3000:80"
+    volumes:
+      - ./page_one.html:/usr/share/nginx/html/index.html

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThaiLy</title>
+    <style>
+        .inner-table-boder {
+            border: solid 1px;
+        }
+        .saved-content {
+            margin-top: 20px;
+        }
+        .entry {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 5px;
+        }
+        .delete-btn {
+            color: red;
+            cursor: pointer;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.6.0/tinymce.min.js" integrity="sha512-/4EpSbZW47rO/cUIb0AMRs/xWwE8pyOLf8eiDWQ6sQash5RP1Cl8Zi2aqa4QEufjeqnzTK8CLZWX7J5ZjLcc1Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script>
+        tinymce.init({
+            selector: "#mytextarea"
+        });
+
+        function saveContent() {
+            tinymce.activeEditor.save();
+            let content = document.getElementById("mytextarea").value;
+            let fileName = document.getElementById("filename").value.trim();
+            if (!fileName) {
+                alert("Vui lòng nhập tên file!");
+                return;
+            }
+            let savedData = JSON.parse(localStorage.getItem("savedFiles")) || {};
+            let expiration = new Date().getTime() + (7 * 24 * 60 * 60 * 1000); // 7 ngày
+            savedData[fileName] = { content, expiration };
+            localStorage.setItem("savedFiles", JSON.stringify(savedData));
+            loadSavedFiles();
+        }
+
+        function loadSavedFiles() {
+            let savedData = JSON.parse(localStorage.getItem("savedFiles")) || {};
+            let now = new Date().getTime();
+            Object.keys(savedData).forEach(key => {
+                if (savedData[key].expiration < now) {
+                    delete savedData[key];
+                }
+            });
+            localStorage.setItem("savedFiles", JSON.stringify(savedData));
+            let container = document.getElementById("saved-content");
+            container.innerHTML = "";
+            Object.keys(savedData).forEach(key => {
+                let div = document.createElement("div");
+                div.classList.add("entry");
+                div.innerHTML = `<p>${key}</p> <button onclick='loadFile("${key}")'>Mở</button> <span class='delete-btn' onclick='deleteFile("${key}")'>Xóa</span>`;
+                container.appendChild(div);
+            });
+        }
+
+        function loadFile(fileName) {
+            let savedData = JSON.parse(localStorage.getItem("savedFiles")) || {};
+            if (savedData[fileName]) {
+                tinymce.activeEditor.setContent(savedData[fileName].content);
+            }
+        }
+
+        function deleteFile(fileName) {
+            let savedData = JSON.parse(localStorage.getItem("savedFiles")) || {};
+            delete savedData[fileName];
+            localStorage.setItem("savedFiles", JSON.stringify(savedData));
+            loadSavedFiles();
+        }
+
+        document.addEventListener("DOMContentLoaded", loadSavedFiles);
+    </script>
+</head>
+<body>
+    <div>
+        <label for="filename">Tên File:</label>
+        <input type="text" id="filename" placeholder="Nhập tên file"><br>
+        <label for="mytextarea">Experience:</label> <br>
+        <textarea id="mytextarea" name="experience"></textarea><br>
+        <button onclick="saveContent()">Lưu</button>
+    </div>
+    <div class="saved-content" id="saved-content"></div>
+    <br><br><br>
+    <div class="inner-footer"><a href="#">Twitter</a> | <a href="#">Facebook</a> | <a href="#">Flickr</a></div>
+</body>
+</html>
