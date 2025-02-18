@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,6 +12,7 @@
             text-align: center;
             padding: 20px;
         }
+
         .container {
             background: white;
             padding: 20px;
@@ -19,13 +21,16 @@
             max-width: 600px;
             margin: auto;
         }
-        input, textarea {
+
+        input,
+        textarea {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
+
         button {
             background-color: #28a745;
             color: white;
@@ -35,13 +40,16 @@
             cursor: pointer;
             margin-top: 10px;
         }
+
         button:hover {
             background-color: #218838;
         }
+
         .saved-content {
             margin-top: 20px;
             text-align: left;
         }
+
         .entry {
             background: #fff;
             border: 1px solid #ddd;
@@ -52,36 +60,80 @@
             align-items: center;
             border-radius: 5px;
         }
+
+        .entry button,
         .delete-btn {
-            color: red;
+            margin-left: 10px;
             cursor: pointer;
         }
+
+        .delete-btn {
+            color: red;
+        }
+
         .inner-footer {
             margin-top: 20px;
         }
+
         .inner-footer a {
             color: #007bff;
             text-decoration: none;
             margin: 0 10px;
         }
+
         .inner-footer a:hover {
             text-decoration: underline;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.6.0/tinymce.min.js" integrity="sha512-/4EpSbZW47rO/cUIb0AMRs/xWwE8pyOLf8eiDWQ6sQash5RP1Cl8Zi2aqa4QEufjeqnzTK8CLZWX7J5ZjLcc1Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.6.0/tinymce.min.js"
+        integrity="sha512-/4EpSbZW47rO/cUIb0AMRs/xWwE8pyOLf8eiDWQ6sQash5RP1Cl8Zi2aqa4QEufjeqnzTK8CLZWX7J5ZjLcc1Q=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         tinymce.init({
-            selector: "#mytextarea"
+            selector: 'textarea',
+            plugins: [
+                // Core editing features
+                'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+                // Your account includes a free trial of TinyMCE premium features
+                // Try the most popular premium features until Mar 4, 2025:
+                'checklist', 'mediaembed', 'casechange', 'export', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown', 'importword', 'exportword', 'exportpdf'
+            ],
+            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+            tinycomments_mode: 'embedded',
+            tinycomments_author: 'Author name',
+            mergetags_list: [
+                { value: 'First.Name', title: 'First Name' },
+                { value: 'Email', title: 'Email' },
+            ],
+            ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('See docs to implement AI Assistant')),
+        });
+
+        function convertUrlsToLinks(text) {
+            const urlRegex = /https?:\/\/[^\s]+/g; // Biểu thức chính quy để nhận diện các URL
+            return text.replace(urlRegex, function (url) {
+                return `<a href="${url}" target="_blank">${url}</a>`; // Thay thế URL thành thẻ <a>
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const textarea = document.getElementById("mytextarea");
+            textarea.addEventListener("input", function (event) {
+                let content = event.target.value;
+                content = convertUrlsToLinks(content); // Chuyển các URL thành thẻ <a>
+                document.getElementById("content-preview").innerHTML = content;
+            });
         });
 
         function saveContent() {
             tinymce.activeEditor.save();
             let content = document.getElementById("mytextarea").value;
             let fileName = document.getElementById("filename").value.trim();
+
             if (!fileName) {
                 alert("Vui lòng nhập tên file!");
                 return;
             }
+
             let savedData = JSON.parse(localStorage.getItem("savedFiles")) || {};
             let expiration = new Date().getTime() + (7 * 24 * 60 * 60 * 1000); // 7 ngày
             savedData[fileName] = { content, expiration };
@@ -103,7 +155,11 @@
             Object.keys(savedData).forEach(key => {
                 let div = document.createElement("div");
                 div.classList.add("entry");
-                div.innerHTML = `<span>${key}</span> <button onclick='loadFile("${key}")'>Mở</button> <span class='delete-btn' onclick='deleteFile("${key}")'>Xóa</span>`;
+                div.innerHTML = `
+            <span>${key}</span>
+            <button onclick='loadFile("${key}")'>Mở</button>
+            <span class='delete-btn' onclick='confirmDelete("${key}")'>Xóa</span>
+        `;
                 container.appendChild(div);
             });
         }
@@ -111,7 +167,14 @@
         function loadFile(fileName) {
             let savedData = JSON.parse(localStorage.getItem("savedFiles")) || {};
             if (savedData[fileName]) {
+                // Đảm bảo nội dung khi tải lên có thể hiển thị đường link
                 tinymce.activeEditor.setContent(savedData[fileName].content);
+            }
+        }
+
+        function confirmDelete(fileName) {
+            if (confirm("Bạn có chắc chắn muốn xóa không?")) {
+                deleteFile(fileName);
             }
         }
 
@@ -125,6 +188,7 @@
         document.addEventListener("DOMContentLoaded", loadSavedFiles);
     </script>
 </head>
+
 <body>
     <div class="container">
         <h2>Trình Soạn Thảo Văn Bản</h2>
@@ -139,4 +203,5 @@
         <a href="#">Twitter</a> | <a href="#">Facebook</a> | <a href="#">Flickr</a>
     </div>
 </body>
+
 </html>
