@@ -157,8 +157,10 @@
                 div.classList.add("entry");
                 div.innerHTML = `
             <span>${key}</span>
+            <div>
             <button onclick='loadFile("${key}")'>Mở</button>
             <span class='delete-btn' onclick='confirmDelete("${key}")'>Xóa</span>
+            </div>
         `;
                 container.appendChild(div);
             });
